@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Movies Open API</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#0b1020;color:#e8ecff}
+    .wrap{max-width:980px;margin:0 auto;padding:32px}
+    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px;margin:16px 0}
+    a{color:#a8c7ff;text-decoration:none}
+    a:hover{text-decoration:underline}
+    code,pre{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:8px}
+    pre{padding:14px;overflow:auto}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+    .btn{display:inline-block;padding:10px 14px;border-radius:12px;background:#2b63ff;color:white;border:none}
+    .btn:hover{opacity:.9}
+    .muted{opacity:.8}
+    h1{font-size:34px;margin:0 0 8px}
+    h2{margin:0 0 8px}
+    ul{margin:8px 0 0 18px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Movies Open API</h1>
+    <p class="muted"></p>
+
+    <div class="card">
+      <h2>Quick links</h2>
+      <ul>
+        <li><a href="/docs">Docs (Swagger UI)</a></li>
+        <li><a href="/portal.html">Portal API Key</a></li>
+        <li><a href="/explore.html">Explore Movies (IMDb mini)</a></li>
+        <li><a href="/v1/health">Health check</a> (public)</li>
+      </ul>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Konsepnya gimana?</h2>
+        <ul>
+          <li>Developer bikin akun di portal → dapat <b>x-api-key</b></li>
+          <li>Pakai key itu buat akses endpoint write (contoh <code>POST /v1/movies</code>)</li>
+          <li>Rate limit biar gak diserbu request</li>
+          <li>Dokumentasi pakai standar <b>OpenAPI 3</b> (Swagger)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Contoh request (curl)</h2>
+        <pre><code># 1) bikin API key dulu lewat portal (UI) atau:
+curl -X POST http://localhost:3000/portal/keys \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Bro","email":"bro@example.com"}'
+
+# 2) pakai key untuk create movie (protected)
+curl -X POST http://localhost:3000/v1/movies \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: &lt;YOUR_KEY&gt;" \
+  -d '{"title":"My Movie","year":2026,"rating":7.5,"genres":["Drama"],"plot":"Short plot..."}'
+</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Endpoints yang ada</h2>
+      <ul>
+        <li><code>GET /v1/health</code> (public)</li>
+        <li><code>GET /v1/movies</code> (public)</li>
+        <li><code>GET /v1/movies/:id</code> (public)</li>
+        <li><code>POST /v1/movies</code> (protected)</li>
+        <li><code>PUT /v1/movies/:id</code> (protected)</li>
+        <li><code>DELETE /v1/movies/:id</code> (protected)</li>
+      </ul>
+    </div>
+
+    <a class="btn" href="/docs">Buka Docs</a>
+    <a class="btn" style="background:#1e2a52" href="/explore.html">Explore Movies</a>
+    <a class="btn" style="background:#1e2a52" href="/portal.html">Buat API Key</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Explore Movies - Kampus Utility API</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#0b1020;color:#e8ecff}
+    .wrap{max-width:980px;margin:0 auto;padding:32px}
+    a{color:#a8c7ff;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px;margin:16px 0}
+    input{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.25);color:#e8ecff}
+    button{padding:10px 14px;border-radius:12px;background:#2b63ff;color:white;border:none;cursor:pointer}
+    button:hover{opacity:.9}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.12);vertical-align:top}
+    th{text-align:left;opacity:.9}
+    .muted{opacity:.75}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.12);margin-right:6px;margin-top:6px;font-size:12px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .error{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);display:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Explore Movies (IMDb mini)</h1>
+    <p class="muted">Ini contoh website yang <b>nampilin data</b> + data yang sama bisa dipakai orang lain via API. Public read: <code>GET /v1/movies</code></p>
+
+    <div class="card">
+      <div class="row">
+        <input id="q" placeholder="Search title / plot..." style="flex:1;min-width:240px" />
+        <input id="year" placeholder="Year (optional)" style="width:160px" />
+        <button id="btn">Search</button>
+        <a href="/docs" style="align-self:center">Docs</a>
+        <a href="/" style="align-self:center">Landing</a>
+      </div>
+      <p class="muted" style="margin-top:10px">Tip: coba cari <b>batman</b>, <b>dream</b>, atau year <b>2010</b>.</p>
+      <div id="err" class="error"></div>
+    </div>
+
+    <div class="card">
+      <h3>Result</h3>
+      <div id="status" class="muted">Loading...</div>
+      <div style="overflow:auto;margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Year</th>
+              <th>Rating</th>
+              <th>Genres</th>
+              <th>Plot</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>API example</h3>
+      <pre style="white-space:pre-wrap;margin:0;background:rgba(0,0,0,.35);padding:14px;border-radius:12px"><code>GET http://localhost:3000/v1/movies?q=batman
+GET http://localhost:3000/v1/movies?year=2010</code></pre>
+    </div>
+  </div>
+
+<script>
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function parseGenres(genres){
+  if (Array.isArray(genres)) return genres;
+  if (typeof genres === "string") {
+    try {
+      const arr = JSON.parse(genres);
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  }
+  return [];
+}
+
+async function loadMovies() {
+  const q = document.getElementById("q").value.trim();
+  const year = document.getElementById("year").value.trim();
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (year) params.set("year", year);
+
+  const status = document.getElementById("status");
+  const tbody = document.getElementById("tbody");
+  const err = document.getElementById("err");
+
+  err.style.display = "none";
+  err.textContent = "";
+  status.textContent = "Loading...";
+  tbody.innerHTML = "";
+
+  try {
+    const res = await fetch("/v1/movies?" + params.toString());
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.error || ("HTTP " + res.status));
+
+    const rows = payload.data || [];
+    status.textContent = rows.length ? `${rows.length} movies` : "No results";
+
+    for (const m of rows) {
+      const tr = document.createElement("tr");
+      const genresArr = parseGenres(m.genres);
+      const genresHtml = genresArr.map(g => `<span class="pill">${escapeHtml(g)}</span>`).join("");
+
+      tr.innerHTML = `
+        <td><b>${escapeHtml(m.title)}</b><div class="muted">${escapeHtml(m.id)}</div></td>
+        <td>${escapeHtml(m.year)}</td>
+        <td>${Number(m.rating).toFixed(1)}</td>
+        <td>${genresHtml}</td>
+        <td>${escapeHtml(m.plot || "")}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  } catch (e) {
+    status.textContent = "Error";
+    err.style.display = "block";
+    err.textContent = "Gagal load data: " + e.message;
+  }
+}
+
+document.getElementById("btn").addEventListener("click", loadMovies);
+document.getElementById("q").addEventListener("keydown", (e)=>{ if(e.key==="Enter") loadMovies(); });
+document.getElementById("year").addEventListener("keydown", (e)=>{ if(e.key==="Enter") loadMovies(); });
+
+loadMovies();
+</script>
+</body>
+</html>

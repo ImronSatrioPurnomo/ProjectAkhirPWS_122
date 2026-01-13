@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Portal API Key - Kampus Utility API</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#0b1020;color:#e8ecff}
+    .wrap{max-width:760px;margin:0 auto;padding:32px}
+    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px;margin:16px 0}
+    input{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.25);color:#e8ecff}
+    label{display:block;margin:12px 0 6px}
+    button{padding:10px 14px;border-radius:12px;background:#2b63ff;color:white;border:none;cursor:pointer}
+    button:hover{opacity:.9}
+    a{color:#a8c7ff;text-decoration:none}
+    a:hover{text-decoration:underline}
+    code,pre{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:8px}
+    pre{padding:14px;overflow:auto}
+    .muted{opacity:.8}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Portal API Key</h1>
+    <p class="muted">Isi form buat generate API key. Key cuma muncul sekali—langsung copy & simpan.</p>
+
+    <div class="card">
+      <label>Nama</label>
+      <input id="name" placeholder="Nama kamu" />
+
+      <label>Email</label>
+      <input id="email" placeholder="email@contoh.com" />
+
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button id="btn">Generate Key</button>
+        <a style="align-self:center" href="/">← balik ke landing</a>
+        <a style="align-self:center" href="/docs">Docs</a>
+      </div>
+    </div>
+
+    <div class="card" id="errorBox" style="display:none;border-color:rgba(255,99,132,.5)"><h3>Gagal</h3><pre><code id="err"></code></pre><p class="muted">Kalau ini kosong, cek DevTools Console (F12) + Network.</p></div>
+
+    <div class="card" id="result" style="display:none">
+      <h3>API Key kamu</h3>
+      <pre><code id="key"></code></pre>
+      <p class="muted">Pakai header: <code>x-api-key: &lt;KEY&gt;</code></p>
+      <h3>Contoh curl</h3>
+      <pre><code id="curl"></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Catatan untuk tugas</h3>
+      <ul>
+        <li>Ini pakai SQLite (file DB) di <code>/data/app.db</code>.</li>
+        <li>Kalau mau “naik level”, pindahin storage ke DB (SQLite/Postgres) + buat login beneran.</li>
+      </ul>
+    </div>
+  </div>
+
+
+<script>
+const btn = document.getElementById("btn");
+const errorBox = document.getElementById("errorBox");
+const errEl = document.getElementById("err");
+
+function showError(msg){
+  errorBox.style.display = "block";
+  errEl.textContent = msg || "Unknown error";
+}
+
+function clearError(){
+  errorBox.style.display = "none";
+  errEl.textContent = "";
+}
+
+btn.addEventListener("click", async () => {
+  clearError();
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  if(!name || !email){
+    alert("Nama dan email wajib diisi");
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Generating...";
+  try {
+    const res = await fetch("/portal/keys", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({name, email})
+    });
+
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok){
+      showError((data && (data.error || data.detail)) || ("HTTP " + res.status));
+      return;
+    }
+
+    document.getElementById("result").style.display = "block";
+    document.getElementById("key").textContent = data.apiKey;
+    document.getElementById("curl").textContent =
+`# (PowerShell) create movie (protected)
+Invoke-RestMethod -Method Post -Uri "http://localhost:3000/v1/movies" \
+  -Headers @{ "x-api-key" = "${data.apiKey}"; "Content-Type" = "application/json" } \
+  -Body '{"title":"My Movie","year":2026,"rating":7.5,"genres":["Drama"],"plot":"Short plot..."}'
+
+# (curl.exe) create movie (protected)
+curl.exe -X POST http://localhost:3000/v1/movies \
+  -H "x-api-key: ${data.apiKey}" \
+  -H "Content-Type: application/json" \
+  -d "{\"title\":\"My Movie\",\"year\":2026,\"rating\":7.5,\"genres\":[\"Drama\"],\"plot\":\"Short plot...\"}"`;
+  } catch (e) {
+    console.error(e);
+    showError("Network error: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Generate Key";
+  }
+});
+</script>
+</body>
+
+</html>

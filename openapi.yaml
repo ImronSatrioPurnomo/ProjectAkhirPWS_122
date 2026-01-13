@@ -1,0 +1,348 @@
+openapi: 3.0.3
+info:
+  title: Movies Open API
+  version: 2.0.0
+  description: |
+    Contoh project **website Open API** (mirip OpenRouter/Midtrans versi mini) dengan tema **Film (IMDb mini)**.
+
+    Fitur:
+    - Landing page: `/`
+    - Portal API Key (generate key): `/portal.html`
+    - Docs (Swagger UI): `/docs`
+    - Explore data (UI): `/explore.html`
+
+    Auth:
+    - Public read: `GET /v1/movies`, `GET /v1/movies/{id}`
+    - Protected write (wajib header `x-api-key`): `POST/PUT/DELETE /v1/movies...`
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Public
+  - name: Movies
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Unauthorized"
+        detail:
+          type: string
+          example: "Missing or invalid API key"
+    Health:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        service:
+          type: string
+          example: "Movies Open API (SQLite)"
+        db:
+          type: string
+          example: "app.db"
+        time:
+          type: string
+          example: "2026-01-13T00:00:00.000Z"
+    ApiKeyResponse:
+      type: object
+      properties:
+        apiKey:
+          type: string
+          example: "kapi_xxxxxxxxxxxxxxxxxxxxxxxx"
+        note:
+          type: string
+          example: "Simpan key ini. Kalau hilang, buat baru."
+        docs:
+          type: string
+          example: "/docs"
+      required: [apiKey]
+    Movie:
+      type: object
+      properties:
+        id:
+          type: string
+          example: mv_inception
+        title:
+          type: string
+          example: Inception
+        year:
+          type: integer
+          example: 2010
+        rating:
+          type: number
+          example: 8.8
+        genres:
+          type: array
+          items:
+            type: string
+          example: ["Action", "Sci-Fi"]
+        plot:
+          type: string
+          example: "A thief enters dreams to steal secrets..."
+        createdAt:
+          type: string
+          example: "2026-01-13T00:00:00.000Z"
+      required: [id, title, year, rating, genres, createdAt]
+
+paths:
+  /v1/health:
+    get:
+      tags: [Public]
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /portal/keys:
+    post:
+      tags: [Public]
+      summary: Buat API key baru (portal)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Bro UMY"
+                email:
+                  type: string
+                  example: "bro@example.com"
+              required: [name, email]
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/movies:
+    get:
+      tags: [Movies]
+      summary: List movies (public)
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+            example: "batman"
+          required: false
+        - in: query
+          name: year
+          schema:
+            type: integer
+            example: 2010
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            example: 50
+          required: false
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            example: 0
+          required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Movie"
+
+    post:
+      tags: [Movies]
+      summary: Create movie (protected)
+      security: [{ ApiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "My Movie"
+                year:
+                  type: integer
+                  example: 2026
+                rating:
+                  type: number
+                  example: 7.5
+                genres:
+                  type: array
+                  items:
+                    type: string
+                  example: ["Drama"]
+                plot:
+                  type: string
+                  example: "Short plot..."
+              required: [title, year]
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Movie"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too Many Requests
+
+  /v1/movies/{id}:
+    get:
+      tags: [Movies]
+      summary: Get movie by id (public)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: mv_inception
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Movie"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    put:
+      tags: [Movies]
+      summary: Update movie (protected)
+      security: [{ ApiKeyAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                year: { type: integer }
+                rating: { type: number }
+                genres:
+                  type: array
+                  items: { type: string }
+                plot: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Movie"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too Many Requests
+
+    delete:
+      tags: [Movies]
+      summary: Delete movie (protected)
+      security: [{ ApiKeyAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too Many Requests
