@@ -187,3 +187,14 @@ app.use((req, res) => {
 
 // ===== Start =====
 const PORT = Number(process.env.PORT || 3000);
+
+(async () => {
+  await initDb();
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`📚 Docs: http://localhost:${PORT}/docs`);
+    console.log(`🔑 Portal: http://localhost:${PORT}/portal.html`);
+    console.log(`🎬 Explore Movies: http://localhost:${PORT}/explore.html`);
+    console.log(`🗄️  SQLite DB: ${DB_PATH}`);
+  });
+})();
