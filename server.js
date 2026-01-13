@@ -184,3 +184,6 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
 });
+
+// ===== Start =====
+const PORT = Number(process.env.PORT || 3000);
