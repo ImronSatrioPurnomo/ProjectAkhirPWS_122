@@ -163,3 +163,14 @@ app.put("/v1/movies/:id", requireApiKey, async (req, res, next) => {
     next(e);
   }
 });
+
+app.delete("/v1/movies/:id", requireApiKey, async (req, res, next) => {
+  try {
+    const ok = await store.deleteMovie(req.params.id);
+    if (!ok) return res.status(404).json({ error: "movie tidak ditemukan" });
+
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
