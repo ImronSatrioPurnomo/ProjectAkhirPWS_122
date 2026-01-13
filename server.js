@@ -174,3 +174,9 @@ app.delete("/v1/movies/:id", requireApiKey, async (req, res, next) => {
     next(e);
   }
 });
+
+// ===== Error handler =====
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal Server Error", detail: err.message });
+});
